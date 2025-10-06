@@ -17,7 +17,8 @@ func Register(cfg *config.Config) {
 		rand.Seed(time.Now().UnixNano())
 
 		if rand.Intn(100) < cfg.JokeChance {
-			fmt.Fprintln(w, api.GetJoke())
+			// Pass cfg to GetJoke
+			fmt.Fprintln(w, api.GetJoke(cfg))
 		} else {
 			fmt.Fprintln(w, "pong!")
 		}

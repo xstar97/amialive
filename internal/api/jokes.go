@@ -12,10 +12,6 @@ import (
 	"github.com/xstar97/amialive/internal/config"
 )
 
-var ValidJokeCategories = []string{
-	"Programming", "Miscellaneous", "Dark", "Pun", "Spooky", "Christmas", "Any",
-}
-
 type JokeResponse struct {
 	Error    bool   `json:"error"`
 	Type     string `json:"type"`

@@ -1,13 +1,17 @@
 package config
 
 import (
+	"flag"
 	"log"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/xstar97/amialive/internal/api"
 )
+
+// ValidJokeCategories is the single source of truth
+var ValidJokeCategories = []string{
+	"Programming", "Miscellaneous", "Dark", "Pun", "Spooky", "Christmas", "Any",
+}
 
 // Config holds runtime configuration
 type Config struct {
@@ -18,42 +22,60 @@ type Config struct {
 	JokeRateLimit  int    // max requests per minute (1–120)
 }
 
-// LoadConfig loads environment variables with defaults
-func LoadConfig() *Config {
-	port := getEnv("PORT", "8080")
-	jokeChance := getEnvInt("JOKE_CHANCE", 30)
+// Load loads configuration from flags, environment variables, and defaults
+func Load() *Config {
+	cfg := &Config{}
 
-	rawCategory := getEnv("JOKE_CATEGORY", "Programming")
-	jokeCategory := validateJokeCategory(rawCategory)
+	// Define flags
+	flag.StringVar(&cfg.Port, "port", "", "Port to run the server on")
+	flag.IntVar(&cfg.JokeChance, "joke-chance", -1, "Percentage chance to show a joke (0-100)")
+	flag.StringVar(&cfg.JokeCategory, "joke-category", "", "Comma-separated JokeAPI categories")
+	flag.BoolVar(&cfg.JokeSafeMode, "joke-safe-mode", true, "Enable safe-mode for jokes")
+	flag.IntVar(&cfg.JokeRateLimit, "jokes-requests", -1, "Max JokeAPI requests per minute (1-120)")
 
-	jokeSafeMode := getEnvBool("JOKE_SAFEMODE", true)
-	jokeRateLimit := getEnvInt("JOKES_REQUESTS", 60)
+	flag.Parse()
 
-	// Clamp to valid range 1–120
-	if jokeRateLimit < 1 {
-		jokeRateLimit = 1
+	// Port
+	if cfg.Port == "" {
+		cfg.Port = getEnv("PORT", "8080")
 	}
-	if jokeRateLimit > 120 {
-		jokeRateLimit = 120
+
+	// Joke chance
+	if cfg.JokeChance == -1 {
+		cfg.JokeChance = getEnvInt("JOKE_CHANCE", 30)
 	}
 
-	return &Config{
-		Port:          port,
-		JokeChance:    jokeChance,
-		JokeCategory:  jokeCategory,
-		JokeSafeMode:  jokeSafeMode,
-		JokeRateLimit: jokeRateLimit,
+	// Joke category
+	if cfg.JokeCategory == "" {
+		cfg.JokeCategory = getEnv("JOKE_CATEGORY", "Programming")
 	}
+	cfg.JokeCategory = validateJokeCategory(cfg.JokeCategory)
+
+	// Safe mode
+	cfg.JokeSafeMode = getEnvBool("JOKE_SAFEMODE", cfg.JokeSafeMode)
+
+	// Joke rate limit
+	if cfg.JokeRateLimit == -1 {
+		cfg.JokeRateLimit = getEnvInt("JOKES_REQUESTS", 60)
+	}
+	if cfg.JokeRateLimit < 1 {
+		cfg.JokeRateLimit = 1
+	}
+	if cfg.JokeRateLimit > 120 {
+		cfg.JokeRateLimit = 120
+	}
+
+	return cfg
 }
 
-// validateJokeCategory filters out invalid categories using api.ValidJokeCategories
+// validateJokeCategory filters out invalid categories using ValidJokeCategories
 func validateJokeCategory(raw string) string {
 	parts := strings.Split(raw, ",")
 	validParts := []string{}
 
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
-		for _, valid := range api.ValidJokeCategories {
+		for _, valid := range ValidJokeCategories {
 			if strings.EqualFold(p, valid) {
 				validParts = append(validParts, valid)
 				break
@@ -69,6 +91,7 @@ func validateJokeCategory(raw string) string {
 	return strings.Join(validParts, ",")
 }
 
+// helper functions
 func getEnv(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/xstar97/amialive/internal/config"
@@ -9,11 +10,13 @@ import (
 )
 
 func main() {
-	cfg := config.LoadConfig()
+	cfg := config.Load()
+
 	routes.Register(cfg)
 
-	fmt.Printf("Server running on port %s (JOKE_CHANCE=%d%%)\n", cfg.Port, cfg.JokeChance)
-	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
-		panic(err)
+	addr := fmt.Sprintf(":%s", cfg.Port)
+	log.Printf("Server starting on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		log.Fatal(err)
 	}
 }
