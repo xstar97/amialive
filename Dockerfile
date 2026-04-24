@@ -19,7 +19,7 @@ RUN go build -o amialive ./cmd
 # ---------- Runtime Stage ----------
 FROM gcr.io/distroless/base-debian12
 
-COPY --from=ghcr.io/tarampampam/microcheck:1.3.0 /bin/httpcheck /bin/httpcheck
+COPY --from=ghcr.io/tarampampam/microcheck:1.4.0 /bin/httpcheck /bin/httpcheck
 COPY --from=builder /app/amialive /app/amialive
 
 WORKDIR /app
